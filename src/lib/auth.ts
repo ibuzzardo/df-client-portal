@@ -93,7 +93,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export async function getAuthSession(): Promise<Awaited<ReturnType<typeof getServerSession>> | null> {
+export async function getAuthSession() {
   try {
     return await getServerSession(authOptions);
   } catch {

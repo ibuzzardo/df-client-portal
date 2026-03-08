@@ -40,29 +40,30 @@ function formatDate(date: Date): string {
 async function updateProjectStatus(projectId: string, status: 'APPROVED' | 'REJECTED'): Promise<void> {
   'use server';
 
-  try {
-    const session = await getAuthSession();
+  const session = await getAuthSession();
 
-    if (!session || session.user.role !== 'ADMIN') {
-      redirect('/dashboard/projects');
-    }
-
-    const response = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/projects/${projectId}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        cookie: '',
-      },
-      body: JSON.stringify({ status }),
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update project status');
-    }
-  } catch {
+  if (!session || session.user.role !== 'ADMIN') {
     redirect('/dashboard/projects');
   }
+
+  await db.project.update({
+    where: { id: projectId },
+    data: {
+      status,
+      approvedById: session.user.id,
+    },
+  });
+
+  await db.projectEvent.create({
+    data: {
+      projectId,
+      type: 'STATUS_CHANGE',
+      message: `Status changed to ${status}`,
+      userId: session.user.id,
+    },
+  });
+
+  redirect(`/dashboard/projects/${projectId}`);
 }
 
 interface ProjectDetailPageProps {
@@ -120,7 +121,7 @@ export default async function ProjectDetailPage({
             </span>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            Submitted by {project.submittedBy.name ?? project.submittedBy.email}
+            Submitted by {project.submittedBy?.name ?? project.submittedBy?.email ?? "Unknown"}
           </p>
         </div>
 
@@ -157,7 +158,7 @@ export default async function ProjectDetailPage({
                     <p className="text-sm font-semibold text-slate-900">{event.type}</p>
                     <p className="mt-1 text-sm text-slate-700">{event.message}</p>
                     <p className="mt-2 text-xs text-slate-500">
-                      {event.user.name ?? event.user.email} • {formatDate(event.createdAt)}
+                      {event.user?.name ?? event.user?.email ?? "Unknown"} • {formatDate(event.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -176,7 +177,7 @@ export default async function ProjectDetailPage({
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted By</p>
-                <p className="mt-1 text-sm text-slate-900">{project.submittedBy.name ?? project.submittedBy.email}</p>
+                <p className="mt-1 text-sm text-slate-900">{project.submittedBy?.name ?? project.submittedBy?.email ?? "Unknown"}</p>
               </div>
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approved By</p>

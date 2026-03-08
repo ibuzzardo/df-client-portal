@@ -150,7 +150,7 @@ describe('prisma/seed', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(errorSpy).toHaveBeenCalledWith('Seed failed:', seedError);
-    expect(errorSpy).toHaveBeenCalledWith(seedError);
+    expect(errorSpy).toHaveBeenCalledWith('Unhandled seed error:', seedError);
     expect(process.exitCode).toBe(1);
     expect(disconnectMock).toHaveBeenCalledTimes(1);
 

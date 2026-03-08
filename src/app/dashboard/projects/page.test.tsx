@@ -63,8 +63,8 @@ describe('ProjectsPage', () => {
       include: { tenant: true, submittedBy: true },
       orderBy: { createdAt: 'desc' },
     });
-    expect(screen.getByText('Admin Project')).toBeInTheDocument();
-    expect(screen.queryByText('New Project')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Admin Project')).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: 'New Project' })).not.toBeInTheDocument();
   });
 
   it('renders tenant-scoped projects for client users with new project button', async () => {
@@ -91,7 +91,7 @@ describe('ProjectsPage', () => {
       include: { tenant: true, submittedBy: true },
       orderBy: { createdAt: 'desc' },
     });
-    expect(screen.getByText('Client Project')).toBeInTheDocument();
-    expect(screen.getByText('New Project')).toBeInTheDocument();
+    expect(screen.getAllByText('Client Project')).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'New Project' })).toBeInTheDocument();
   });
 });

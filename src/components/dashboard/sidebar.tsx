@@ -38,7 +38,7 @@ export function Sidebar({ user }: SidebarProps): React.JSX.Element {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href as "/dashboard" | "/dashboard/projects"}
                 className={cn(
                   'inline-flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 active:bg-slate-200',
                   isActive ? 'bg-slate-100 text-slate-900' : '',

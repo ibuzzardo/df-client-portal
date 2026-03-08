@@ -100,6 +100,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error('Unhandled seed error:', error);
-  process.exit(1);
+  try {
+    console.error('Unhandled seed error:', error);
+  } catch {
+    // console unavailable
+  }
+  process.exitCode = 1;
 });

@@ -116,7 +116,7 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
                     {project.tenant.name}
                   </td>
                   <td className="border-t border-slate-200 px-4 py-4 align-middle text-sm text-slate-700">
-                    {project.submittedBy.name ?? project.submittedBy.email}
+                    {project.submittedBy?.name ?? project.submittedBy?.email ?? "Unknown"}
                   </td>
                   <td className="border-t border-slate-200 px-4 py-4 align-middle text-sm text-slate-700">
                     {formatDate(project.createdAt)}
@@ -150,7 +150,7 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
                 </div>
                 <div>
                   <dt className="font-semibold text-slate-900">Submitted By</dt>
-                  <dd>{project.submittedBy.name ?? project.submittedBy.email}</dd>
+                  <dd>{project.submittedBy?.name ?? project.submittedBy?.email ?? "Unknown"}</dd>
                 </div>
                 <div>
                   <dt className="font-semibold text-slate-900">Created</dt>
