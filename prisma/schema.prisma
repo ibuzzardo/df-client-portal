@@ -7,18 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum MemberRole {
+  ADMIN
+  CLIENT
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  BUILDING
+  DELIVERED
+  REJECTED
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  memberships   Membership[]
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String         @id @default(cuid())
+  name             String?
+  email            String?        @unique
+  emailVerified    DateTime?
+  image            String?
+  passwordHash     String?
+  accounts         Account[]
+  sessions         Session[]
+  memberships      Membership[]
+  submittedProjects Project[]     @relation("ProjectSubmitter")
+  approvedProjects  Project[]     @relation("ProjectApprover")
+  projectEvents     ProjectEvent[]
 }
 
 model Account {
@@ -62,20 +77,47 @@ model Tenant {
   name        String
   slug        String       @unique
   memberships Membership[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  projects    Project[]
 }
 
 model Membership {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   userId    String
   tenantId  String
-  role      String   @default("member")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      MemberRole @default(CLIENT)
+  createdAt DateTime   @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId])
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  tenantId      String
+  name          String
+  brief         String        @db.Text
+  status        ProjectStatus @default(DRAFT)
+  submittedById String?
+  approvedById  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submittedBy User?          @relation("ProjectSubmitter", fields: [submittedById], references: [id])
+  approvedBy  User?          @relation("ProjectApprover", fields: [approvedById], references: [id])
+  events      ProjectEvent[]
+}
+
+model ProjectEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  type      String
+  message   String   @db.Text
+  userId    String?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
 }
