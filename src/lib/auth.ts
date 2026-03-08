@@ -1,7 +1,7 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import type { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
 import { getServerSession } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 
 import { db } from '@/lib/db';
@@ -10,7 +10,7 @@ import { loginSchema } from '@/lib/validators/auth';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
   },
   pages: {
     signIn: '/login',
@@ -56,10 +56,32 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      try {
+        if (user) {
+          token.id = user.id;
+          token.email = user.email;
+
+          const membership = await db.membership.findFirst({
+            where: { userId: user.id },
+            include: { tenant: true },
+          });
+
+          token.role = membership?.role ?? null;
+          token.tenantId = membership?.tenantId ?? null;
+        }
+
+        return token;
+      } catch {
+        return token;
+      }
+    },
+    async session({ session, token }) {
       try {
         if (session.user) {
-          session.user.id = user.id;
+          session.user.id = token.id as string;
+          session.user.role = token.role as string;
+          session.user.tenantId = token.tenantId as string;
         }
 
         return session;
@@ -71,7 +93,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export async function getAuthSession() {
+export async function getAuthSession(): Promise<Awaited<ReturnType<typeof getServerSession>> | null> {
   try {
     return await getServerSession(authOptions);
   } catch {
