@@ -37,9 +37,12 @@ export default async function TenantsPage(): Promise<React.JSX.Element> {
               Manage client organizations, members, and project ownership.
             </p>
           </div>
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/dashboard/tenants/new">New Tenant</Link>
-          </Button>
+          <Link
+              href="/dashboard/tenants/new"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 sm:w-auto"
+            >
+              New Tenant
+            </Link>
         </div>
 
         <Card className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">

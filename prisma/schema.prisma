@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,23 +13,29 @@ enum MemberRole {
 }
 
 enum ProjectStatus {
+  DRAFT
   SUBMITTED
   APPROVED
-  REJECTED
   BUILDING
   DELIVERED
+  REJECTED
 }
 
 model User {
-  id           String       @id @default(cuid())
-  name         String?
-  email        String?      @unique
-  passwordHash String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  accounts     Account[]
-  sessions     Session[]
-  memberships  Membership[]
+  id               String         @id @default(cuid())
+  name             String?
+  email            String?        @unique
+  emailVerified    DateTime?
+  image            String?
+  passwordHash     String?
+  accounts         Account[]
+  sessions         Session[]
+  memberships      Membership[]
+  submittedProjects Project[]     @relation("ProjectSubmitter")
+  approvedProjects  Project[]     @relation("ProjectApprover")
+  projectEvents     ProjectEvent[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model Account {
@@ -38,12 +44,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -69,14 +75,14 @@ model VerificationToken {
 }
 
 model Tenant {
-  id           String        @id @default(cuid())
-  name         String
-  slug         String        @unique
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  memberships  Membership[]
-  projects     Project[]
-  invitations  Invitation[]
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  memberships Membership[]
+  projects    Project[]
+  invitations Invitation[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Membership {
@@ -94,28 +100,33 @@ model Membership {
 
 model Project {
   id            String        @id @default(cuid())
-  name          String
-  brief         String
-  status        ProjectStatus @default(SUBMITTED)
   tenantId      String
-  createdById   String
+  name          String
+  brief         String        @db.Text
+  status        ProjectStatus @default(DRAFT)
+  submittedById String?
+  approvedById  String?
   pipelineJobId String?
   prUrl         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdBy     User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  events        ProjectEvent[]
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  submittedBy User?          @relation("ProjectSubmitter", fields: [submittedById], references: [id])
+  approvedBy  User?          @relation("ProjectApprover", fields: [approvedById], references: [id])
+  events      ProjectEvent[]
 }
 
 model ProjectEvent {
   id        String   @id @default(cuid())
   projectId String
   type      String
-  message   String
+  message   String   @db.Text
+  userId    String?
   createdAt DateTime @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
 }
 
 model Invitation {

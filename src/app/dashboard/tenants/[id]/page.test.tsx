@@ -103,7 +103,7 @@ describe('TenantDetailPage', () => {
     render(<mod.default />);
 
     expect(await screen.findByText('Projects')).toBeInTheDocument();
-    expect(screen.getByText('Add Member')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Member' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
   });
 });
