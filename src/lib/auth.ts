@@ -1,8 +1,8 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import type { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { getServerSession } from 'next-auth';
 import { compare } from 'bcryptjs';
+import type { NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { db } from '@/lib/db';
 import { loginSchema } from '@/lib/validators/auth';
@@ -71,7 +71,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export async function getAuthSession() {
+export async function getAuthSession(): Promise<Awaited<ReturnType<typeof getServerSession>> | null> {
   try {
     return await getServerSession(authOptions);
   } catch {

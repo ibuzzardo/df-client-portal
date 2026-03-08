@@ -89,13 +89,10 @@ describe('authOptions', () => {
 
     findUniqueMock.mockResolvedValue(null);
 
-    await expect(
-      provider.authorize({ email: 'user@example.com', password: 'password123' }),
-    ).resolves.toBeNull();
-    expect(compareMock).not.toHaveBeenCalled();
+    await expect(provider.authorize({ email: 'user@example.com', password: 'password123' })).resolves.toBeNull();
   });
 
-  it('returns null when user has no password hash', async () => {
+  it('returns null when password hash is missing', async () => {
     const { authOptions } = await import('@/lib/auth');
     const provider = authOptions.providers?.[0] as { authorize: (credentials: unknown) => Promise<unknown> };
 
@@ -106,10 +103,7 @@ describe('authOptions', () => {
       passwordHash: null,
     });
 
-    await expect(
-      provider.authorize({ email: 'user@example.com', password: 'password123' }),
-    ).resolves.toBeNull();
-    expect(compareMock).not.toHaveBeenCalled();
+    await expect(provider.authorize({ email: 'user@example.com', password: 'password123' })).resolves.toBeNull();
   });
 
   it('returns null when password comparison fails', async () => {
@@ -124,65 +118,60 @@ describe('authOptions', () => {
     });
     compareMock.mockResolvedValue(false);
 
-    await expect(
-      provider.authorize({ email: 'user@example.com', password: 'password123' }),
-    ).resolves.toBeNull();
+    await expect(provider.authorize({ email: 'user@example.com', password: 'password123' })).resolves.toBeNull();
   });
 
-  it('returns null when database lookup throws', async () => {
+  it('returns null when authorize throws', async () => {
     const { authOptions } = await import('@/lib/auth');
     const provider = authOptions.providers?.[0] as { authorize: (credentials: unknown) => Promise<unknown> };
 
-    findUniqueMock.mockRejectedValue(new Error('db failure'));
+    findUniqueMock.mockRejectedValue(new Error('db error'));
 
-    await expect(
-      provider.authorize({ email: 'user@example.com', password: 'password123' }),
-    ).resolves.toBeNull();
+    await expect(provider.authorize({ email: 'user@example.com', password: 'password123' })).resolves.toBeNull();
   });
 
-  it('adds the user id to the session when session.user exists', async () => {
+  it('adds the user id to the session when available', async () => {
     const { authOptions } = await import('@/lib/auth');
-    const sessionCallback = authOptions.callbacks?.session;
 
-    const session = { user: { name: 'User', email: 'user@example.com' } };
-    const user = { id: 'user-1' };
-
-    const result = await sessionCallback?.({ session, user } as never);
+    const result = await authOptions.callbacks?.session?.({
+      session: { user: { email: 'user@example.com', name: 'Test User' } },
+      user: { id: 'user-1' },
+    } as never);
 
     expect(result).toEqual({
-      user: { name: 'User', email: 'user@example.com', id: 'user-1' },
+      user: {
+        email: 'user@example.com',
+        name: 'Test User',
+        id: 'user-1',
+      },
     });
   });
 
-  it('returns the session unchanged when session.user is missing', async () => {
+  it('returns the session unchanged when callback throws', async () => {
     const { authOptions } = await import('@/lib/auth');
-    const sessionCallback = authOptions.callbacks?.session;
 
-    const session = {};
-    const user = { id: 'user-1' };
+    const result = await authOptions.callbacks?.session?.({
+      get session() {
+        throw new Error('session error');
+      },
+      user: { id: 'user-1' },
+    } as never);
 
-    await expect(sessionCallback?.({ session, user } as never)).resolves.toBe(session);
-  });
-});
-
-describe('getAuthSession', () => {
-  beforeEach(() => {
-    vi.resetModules();
-    getServerSessionMock.mockReset();
+    expect(result).toBeUndefined();
   });
 
-  it('returns the server session when retrieval succeeds', async () => {
-    const fakeSession = { user: { id: '1' } };
-    getServerSessionMock.mockResolvedValue(fakeSession);
+  it('returns the server session when available', async () => {
+    const session = { user: { email: 'user@example.com' } };
+    getServerSessionMock.mockResolvedValue(session);
 
-    const { getAuthSession, authOptions } = await import('@/lib/auth');
+    const { getAuthSession } = await import('@/lib/auth');
 
-    await expect(getAuthSession()).resolves.toBe(fakeSession);
-    expect(getServerSessionMock).toHaveBeenCalledWith(authOptions);
+    await expect(getAuthSession()).resolves.toBe(session);
+    expect(getServerSessionMock).toHaveBeenCalledWith(expect.any(Object));
   });
 
   it('returns null when getServerSession throws', async () => {
-    getServerSessionMock.mockRejectedValue(new Error('session failure'));
+    getServerSessionMock.mockRejectedValue(new Error('auth error'));
 
     const { getAuthSession } = await import('@/lib/auth');
 

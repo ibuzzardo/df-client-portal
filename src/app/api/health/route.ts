@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server';
 
-import { db } from '@/lib/db';
-import { createErrorResponse, normalizeError } from '@/lib/errors';
-
-export async function GET(): Promise<NextResponse> {
+export async function GET(): Promise<Response> {
   try {
-    await db.$queryRaw`SELECT 1`;
-
-    return NextResponse.json({
-      status: 'healthy',
-      services: {
-        database: 'connected',
-        auth: process.env.NEXTAUTH_SECRET ? 'configured' : 'missing',
+    return NextResponse.json(
+      {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
       },
-    });
+      { status: 200 },
+    );
   } catch (error) {
-    return createErrorResponse(normalizeError(error), 500);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
   }
 }
