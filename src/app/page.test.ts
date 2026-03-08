@@ -9,10 +9,10 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('HomePage', () => {
-  it('redirects to /login', async () => {
+  it('redirects to /dashboard', async () => {
     const mod = await import('@/app/page');
 
     expect(() => mod.default()).toThrow('NEXT_REDIRECT');
-    expect(redirectMock).toHaveBeenCalledWith('/login');
+    expect(redirectMock).toHaveBeenCalledWith('/dashboard');
   });
 });
